@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>學旅定價計算器</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+<div class="app">
+  <header class="topbar">
+    <div>
+      <h1>學旅定價策略</h1>
+      <p class="subtitle">用人數與成本快速試算定價、成團線與毛利率</p>
+    </div>
+
+    <div class="segmented">
+      <button class="segBtn active" id="modeInclude" type="button">含機票</button>
+      <button class="segBtn" id="modeExclude" type="button">不含機票</button>
+    </div>
+  </header>
+
+  <section class="grid2">
+    <!-- Avg price -->
+    <article class="statCard warm">
+      <div class="statHead">
+        <div class="statIcon">💰</div>
+        <div class="statMeta">
+          <div class="statLabel">平均售價</div>
+          <div class="statValue" id="avgPriceTxt">NT$ 0</div>
+          <div class="statSub">
+            一般 <span id="cntNormalTxt">0</span>｜早鳥 <span id="cntEarlyTxt">0</span>｜學員 <span id="cntStudentTxt">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="statViz">
+        <div class="ringWrap">
+          <div class="ring" id="ring15"></div>
+          <div class="ringCenter">
+            <div class="ringPct" id="gm15Txt">—</div>
+            <div class="ringNote">15人毛利率</div>
+          </div>
+        </div>
+
+        <div class="ringWrap">
+          <div class="ring warn" id="ring17"></div>
+          <div class="ringCenter">
+            <div class="ringPct" id="gm17Txt">—</div>
+            <div class="ringNote">17人毛利率</div>
+          </div>
+        </div>
+      </div>
+      <div class="underNote" id="peopleHint">建議出團：17人</div>
+    </article>
+
+    <!-- Cost -->
+    <article class="statCard cool">
+      <div class="statHead">
+        <div class="statIcon">🧾</div>
+        <div class="statMeta">
+          <div class="statLabel">每人成本</div>
+          <div class="statValue" id="costPerTxt">NT$ 0</div>
+          <div class="statSub" id="feeSubTxt">尾款刷卡平均手續費：NT$ 0 / 人</div>
+        </div>
+      </div>
+
+      <div class="statViz">
+        <div class="miniStack" id="costStack"></div>
+      </div>
+      <div class="underNote" id="busHint">—</div>
+    </article>
+
+    <!-- Breakeven -->
+    <article class="statCard sand">
+      <div class="statHead">
+        <div class="statIcon">🚦</div>
+        <div class="statMeta">
+          <div class="statLabel">最低成團</div>
+          <div class="statValue" id="breakevenTxt">—</div>
+          <div class="statSub">以你目前的售價與成本估算</div>
+        </div>
+      </div>
+
+      <div class="statViz">
+        <div class="ringWrap">
+          <div class="ring warn" id="ringTarget"></div>
+          <div class="ringCenter">
+            <div class="ringPct" id="gmTargetTxt">—</div>
+            <div class="ringNote">目標人數毛利率</div>
+          </div>
+        </div>
+
+        <div class="pill" id="riskPill">—</div>
+      </div>
+      <div class="underNote">目標毛利率：<span id="targetGmTxt">20%</span></div>
+    </article>
+
+    <!-- Suggest price -->
+    <article class="statCard green">
+      <div class="statHead">
+        <div class="statIcon">🎯</div>
+        <div class="statMeta">
+          <div class="statLabel">要「15人成團」建議一般價</div>
+          <div class="statValue" id="suggestNormalTxt">NT$ —</div>
+          <div class="statSub">會自動使用你選的尾數方式</div>
+        </div>
+      </div>
+
+      <div class="statViz">
+        <div class="spark line" id="sparkMargin"></div>
+      </div>
+      <div class="underNote">曲線：人數範圍內毛利率變化</div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panelHead">
+      <h2>輸入區</h2>
+      <button class="ghostBtn" id="resetBtn" type="button">重設</button>
+    </div>
+
+    <div class="formGrid">
+      <!-- People -->
+      <div class="box">
+        <div class="boxTitle">人數</div>
+
+        <div class="row2">
+          <div class="col">
+            <label>目標人數</label>
+            <input id="targetPeople" type="number" min="1" value="20">
+          </div>
+          <div class="col">
+            <label>早鳥人數</label>
+            <input id="earlyCount" type="number" min="0" value="6">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>學員人數</label>
+            <input id="studentCount" type="number" min="0" value="4">
+          </div>
+          <div class="col">
+            <label>希望成團人數</label>
+            <input id="desiredPeople" type="number" min="1" value="15">
+          </div>
+        </div>
+
+        <div class="note" id="capNote">建議出團人數：17人（目前巴士可載學生上限）</div>
+      </div>
+
+      <!-- Pricing -->
+      <div class="box">
+        <div class="boxTitle">售價</div>
+
+        <div class="row">
+          <label>一般價</label>
+          <div class="money">
+            <span class="unit">NT$</span>
+            <input id="priceNormal" type="text" inputmode="numeric" value="45,800">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>早鳥折扣</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="earlyDiscount" type="text" inputmode="numeric" value="2,000">
+            </div>
+          </div>
+          <div class="col">
+            <label>早鳥價</label>
+            <div class="pill big" id="priceEarlyTxt">NT$ —</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>學員價 = 成本 +</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="studentBuffer" type="text" inputmode="numeric" value="2,000">
+            </div>
+          </div>
+          <div class="col">
+            <label>學員價</label>
+            <div class="pill big" id="priceStudentTxt">NT$ —</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>建議定價尾數</label>
+            <select id="priceEnding">
+              <option value="hundred">整百</option>
+              <option value="800" selected>尾數 800</option>
+              <option value="900">尾數 900</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>目標毛利率</label>
+            <div class="inline">
+              <input id="targetGM" type="number" min="0" max="95" value="20">
+              <span class="unit2">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Costs -->
+      <div class="box">
+        <div class="boxTitle">每人成本</div>
+
+        <div class="row2">
+          <div class="col">
+            <label>日方</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="costJapan" type="text" inputmode="numeric" value="25,000">
+            </div>
+          </div>
+          <div class="col">
+            <label>機票</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="costFlight" type="text" inputmode="numeric" value="10,500">
+            </div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>保險</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="costInsurance" type="text" inputmode="numeric" value="600">
+            </div>
+          </div>
+          <div class="col">
+            <label>網卡</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="costSim" type="text" inputmode="numeric" value="280">
+            </div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>手冊</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="costBook" type="text" inputmode="numeric" value="100">
+            </div>
+          </div>
+          <div class="col">
+            <label>大型巴士追加費（每人）</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="bigBusExtraPer" type="text" inputmode="numeric" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label>其他每人</label>
+          <div class="money">
+            <span class="unit">NT$</span>
+            <input id="costExtraPer" type="text" inputmode="numeric" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Ads + Card fee (counts) -->
+      <div class="box">
+        <div class="boxTitle">廣告與刷卡</div>
+
+        <div class="row2">
+          <div class="col">
+            <label>每位報名廣告成本</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="adCostPerSignup" type="text" inputmode="numeric" value="2,500">
+            </div>
+          </div>
+          <div class="col">
+            <label>其他固定費</label>
+            <div class="money">
+              <span class="unit">NT$</span>
+              <input id="fixedOther" type="text" inputmode="numeric" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>訂金</label>
+            <div class="money disabled">
+              <span class="unit">NT$</span>
+              <input id="deposit" type="text" value="15,000" disabled>
+            </div>
+          </div>
+          <div class="col">
+            <label>尾款刷卡人數</label>
+            <input id="cardCount" type="number" min="0" value="2">
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="col">
+            <label>手續費率</label>
+            <div class="inline">
+              <input id="cardFeeRate" type="number" min="0" max="10" step="0.1" value="2.4">
+              <span class="unit2">%</span>
+            </div>
+          </div>
+          <div class="col">
+            <label>固定成本</label>
+            <div class="pill big" id="fixedTxt">NT$ —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Margin list -->
+  <section class="panel">
+    <div class="panelHead">
+      <h2>人數 → 毛利率</h2>
+      <div class="range">
+        <span class="muted">範圍</span>
+        <input id="rangeFrom" type="number" min="1" value="10">
+        <span class="muted">～</span>
+        <input id="rangeTo" type="number" min="1" value="28">
+      </div>
+    </div>
+
+    <div class="list" id="marginList"></div>
+  </section>
+
+  <footer class="footer">
+    <div class="muted">✓ 會自動保存你輸入的數字</div>
+  </footer>
+</div>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
