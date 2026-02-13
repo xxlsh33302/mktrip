@@ -1,355 +1,1057 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>學旅定價策略</title>
+  <style>
+    :root{
+      --bg:#f6f3f1;
+      --panel:#ffffff;
+      --text:#1b1b1b;
+      --muted:#6e6e6e;
+      --line:rgba(0,0,0,.08);
+      --shadow:0 18px 50px rgba(0,0,0,.08);
+      --radius:26px;
 
-  <head>
-    <meta charset="UTF-8">
-    <title>學旅定價計算器</title>
-    <link rel="stylesheet" href="./style.css">
+      --warm:#fff2ea;
+      --cool:#eef7ff;
+      --sand:#f7f1ea;
+      --green:#eef8ef;
 
-  </head>
-    
-  <body>
-  <link rel="stylesheet" href="style.css">
-<script src="script.js"></script>
-<div class="app">
-  <header class="topbar">
-    <div>
-      <h1>學旅定價策略</h1>
-      <p class="subtitle">用人數與成本快速試算定價、成團線與毛利率</p>
-    </div>
+      --orange:#ff6a2b;
+      --gold:#ffb020;
+      --ok:#2fb86b;
+    }
 
-    <div class="segmented">
-      <button class="segBtn active" id="modeInclude" type="button">含機票</button>
-      <button class="segBtn" id="modeExclude" type="button">不含機票</button>
-    </div>
-  </header>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      padding:26px;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", Arial;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, #fde3d6 0%, transparent 55%),
+        radial-gradient(circle at 85% 80%, #e1f0e5 0%, transparent 55%),
+        var(--bg);
+    }
+    .app{ max-width:980px; margin:0 auto; }
 
-  <section class="grid2">
-    <!-- Avg price -->
-    <article class="statCard warm">
-      <div class="statHead">
-        <div class="statIcon">💰</div>
-        <div class="statMeta">
-          <div class="statLabel">平均售價</div>
-          <div class="statValue" id="avgPriceTxt">NT$ 0</div>
-          <div class="statSub">
-            一般 <span id="cntNormalTxt">0</span>｜早鳥 <span id="cntEarlyTxt">0</span>｜學員 <span id="cntStudentTxt">0</span>
-          </div>
-        </div>
+    .topbar{
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:16px; margin-bottom:16px;
+    }
+    h1{ margin:0; font-size:22px; letter-spacing:.2px; }
+    .subtitle{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+    .segmented{
+      display:flex; gap:10px;
+      background:rgba(255,255,255,.65);
+      border:1px solid var(--line);
+      padding:10px;
+      border-radius:999px;
+      box-shadow:0 12px 30px rgba(0,0,0,.05);
+    }
+    .segBtn{
+      border:none; background:transparent;
+      font-weight:900; padding:10px 14px;
+      border-radius:999px; cursor:pointer;
+      color:rgba(0,0,0,.55);
+    }
+    .segBtn.active{
+      background:linear-gradient(180deg, #ff7a36, #ff5f1f);
+      color:#fff;
+      box-shadow:0 10px 24px rgba(255,95,31,.25);
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:14px;
+      margin-bottom:16px;
+    }
+    @media (max-width: 760px){
+      body{padding:16px}
+      .topbar{flex-direction:column; align-items:flex-start}
+      .grid2{grid-template-columns:1fr}
+    }
+
+    .statCard{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .statCard.warm{ background:linear-gradient(180deg, var(--warm), #fff); }
+    .statCard.cool{ background:linear-gradient(180deg, #eef7ff, #fff); }
+    .statCard.sand{ background:linear-gradient(180deg, var(--sand), #fff); }
+    .statCard.green{ background:linear-gradient(180deg, var(--green), #fff); }
+
+    .statHead{ display:flex; gap:12px; align-items:flex-start; }
+    .statIcon{
+      width:42px;height:42px;border-radius:16px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;
+      border:1px solid var(--line);
+      background:#fff;
+      box-shadow:0 10px 20px rgba(0,0,0,.06);
+    }
+    .statLabel{ font-size:12px; color:rgba(0,0,0,.55); font-weight:900; }
+    .statValue{ font-size:24px; font-weight:950; margin-top:4px; }
+    .statSub{ margin-top:6px; font-size:12px; color:rgba(0,0,0,.55); }
+
+    .statViz{
+      margin-top:14px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .ringWrap{ position:relative; width:78px; height:78px; }
+    .ring{
+      width:78px;height:78px;border-radius:999px;
+      background: conic-gradient(var(--orange) 0deg, rgba(0,0,0,.06) 0deg);
+      box-shadow:0 10px 22px rgba(0,0,0,.08);
+    }
+    .ring.warn{ background: conic-gradient(var(--gold) 0deg, rgba(0,0,0,.06) 0deg); }
+    .ring.ok{ background: conic-gradient(var(--ok) 0deg, rgba(0,0,0,.06) 0deg); }
+
+    .ringCenter{
+      position:absolute; inset:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.92);
+      border:1px solid rgba(0,0,0,.06);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      text-align:center;
+    }
+    .ringPct{ font-size:13px; font-weight:950; }
+    .ringNote{ margin-top:2px; font-size:10px; color:rgba(0,0,0,.55); font-weight:900; }
+
+    .underNote{
+      margin-top:10px;
+      font-size:12px;
+      color:rgba(0,0,0,.55);
+      background:rgba(0,0,0,.03);
+      border:1px solid rgba(0,0,0,.06);
+      padding:10px 12px;
+      border-radius:18px;
+    }
+
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.06);
+      background:rgba(255,255,255,.75);
+      font-size:12px; font-weight:900;
+      color:rgba(0,0,0,.62);
+      box-shadow:0 10px 20px rgba(0,0,0,.05);
+    }
+    .pill.big{ width:100%; text-align:center; font-size:13px; }
+
+    .miniStack{
+      width:220px;
+      height:14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.75);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 10px 20px rgba(0,0,0,.05);
+      overflow:hidden;
+      display:flex;
+    }
+    .miniStack span{ height:100%; }
+
+    .spark{
+      width:220px; height:60px; border-radius:18px;
+      background:rgba(255,255,255,.75);
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 10px 22px rgba(0,0,0,.06);
+      overflow:hidden;
+    }
+    .spark svg{ width:100%; height:100%; }
+
+    .panel{
+      background:rgba(255,255,255,.72);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+      margin-bottom:16px;
+    }
+    .panelHead{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:12px;
+    }
+    .panelHead h2{ margin:0; font-size:16px; letter-spacing:.2px; }
+
+    .ghostBtn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:0 10px 22px rgba(0,0,0,.06);
+    }
+
+    .formGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:12px;
+    }
+    @media (max-width: 760px){
+      .formGrid{ grid-template-columns:1fr; }
+    }
+
+    .box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:14px;
+      box-shadow:0 12px 26px rgba(0,0,0,.06);
+    }
+    .boxTitle{ font-weight:950; letter-spacing:.2px; margin-bottom:10px; }
+
+    .row{ margin-bottom:10px; }
+    .row2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media (max-width: 760px){ .row2{ grid-template-columns:1fr; } }
+
+    label{
+      display:block;
+      font-size:12px;
+      color:rgba(0,0,0,.60);
+      font-weight:900;
+      margin-bottom:6px;
+    }
+
+    input, select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      outline:none;
+      font-size:13px;
+      box-shadow:0 10px 20px rgba(0,0,0,.05);
+      background:#fff;
+    }
+    .money{
+      display:flex; align-items:center; gap:8px;
+      padding:0 12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#fff;
+      box-shadow:0 10px 20px rgba(0,0,0,.05);
+    }
+    .money input{
+      border:none; box-shadow:none;
+      padding:12px 6px;
+      background:transparent;
+    }
+    .money .unit{
+      font-size:12px; color:rgba(0,0,0,.50);
+      font-weight:900;
+      user-select:none;
+    }
+    .money.disabled{ opacity:.85; }
+
+    .inline{ display:flex; align-items:center; gap:10px; }
+    .unit2{ font-weight:900; color:rgba(0,0,0,.50); }
+
+    .note{
+      margin-top:10px;
+      font-size:12px;
+      color:rgba(0,0,0,.55);
+      background:rgba(0,0,0,.03);
+      border:1px solid rgba(0,0,0,.06);
+      padding:10px 12px;
+      border-radius:18px;
+    }
+
+    .range{ display:flex; align-items:center; gap:10px; }
+    .range input{ width:82px; padding:10px 10px; }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .item{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
+      border-radius:20px;
+      background:#fff;
+      border:1px solid var(--line);
+      box-shadow:0 10px 22px rgba(0,0,0,.05);
+    }
+    .left{ display:flex; align-items:center; gap:12px; min-width:0; }
+    .badge{
+      width:36px;height:36px;border-radius:14px;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;
+      border:1px solid rgba(0,0,0,.06);
+      background:rgba(0,0,0,.03);
+    }
+    .meta{ min-width:0; }
+    .meta .t{ font-weight:950; font-size:13px; }
+    .meta .s{
+      margin-top:4px;
+      font-size:11px;
+      color:rgba(0,0,0,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:520px;
+    }
+    .right{ text-align:right; }
+    .right .gm{ font-weight:950; font-size:14px; }
+    .right .gp{ margin-top:4px; font-size:11px; color:rgba(0,0,0,.55); }
+
+    .muted{ color:var(--muted); }
+    .footer{ text-align:center; padding:8px 0 0; font-size:12px; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1>學旅定價策略</h1>
+        <p class="subtitle">用人數與成本快速試算定價、成團線與毛利率</p>
       </div>
 
-      <div class="statViz">
-        <div class="ringWrap">
-          <div class="ring" id="ring15"></div>
-          <div class="ringCenter">
-            <div class="ringPct" id="gm15Txt">—</div>
-            <div class="ringNote">15人毛利率</div>
+      <div class="segmented">
+        <button class="segBtn active" id="modeInclude" type="button">含機票</button>
+        <button class="segBtn" id="modeExclude" type="button">不含機票</button>
+      </div>
+    </header>
+
+    <section class="grid2">
+      <article class="statCard warm">
+        <div class="statHead">
+          <div class="statIcon">💰</div>
+          <div class="statMeta">
+            <div class="statLabel">平均售價</div>
+            <div class="statValue" id="avgPriceTxt">NT$ 0</div>
+            <div class="statSub">
+              一般 <span id="cntNormalTxt">0</span>｜早鳥 <span id="cntEarlyTxt">0</span>｜學員 <span id="cntStudentTxt">0</span>
+            </div>
           </div>
         </div>
 
-        <div class="ringWrap">
-          <div class="ring warn" id="ring17"></div>
-          <div class="ringCenter">
-            <div class="ringPct" id="gm17Txt">—</div>
-            <div class="ringNote">17人毛利率</div>
+        <div class="statViz">
+          <div class="ringWrap">
+            <div class="ring" id="ring15"></div>
+            <div class="ringCenter">
+              <div class="ringPct" id="gm15Txt">—</div>
+              <div class="ringNote">15人毛利率</div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="underNote" id="peopleHint">建議出團：17人</div>
-    </article>
 
-    <!-- Cost -->
-    <article class="statCard cool">
-      <div class="statHead">
-        <div class="statIcon">🧾</div>
-        <div class="statMeta">
-          <div class="statLabel">每人成本</div>
-          <div class="statValue" id="costPerTxt">NT$ 0</div>
-          <div class="statSub" id="feeSubTxt">尾款刷卡平均手續費：NT$ 0 / 人</div>
-        </div>
-      </div>
-
-      <div class="statViz">
-        <div class="miniStack" id="costStack"></div>
-      </div>
-      <div class="underNote" id="busHint">—</div>
-    </article>
-
-    <!-- Breakeven -->
-    <article class="statCard sand">
-      <div class="statHead">
-        <div class="statIcon">🚦</div>
-        <div class="statMeta">
-          <div class="statLabel">最低成團</div>
-          <div class="statValue" id="breakevenTxt">—</div>
-          <div class="statSub">以你目前的售價與成本估算</div>
-        </div>
-      </div>
-
-      <div class="statViz">
-        <div class="ringWrap">
-          <div class="ring warn" id="ringTarget"></div>
-          <div class="ringCenter">
-            <div class="ringPct" id="gmTargetTxt">—</div>
-            <div class="ringNote">目標人數毛利率</div>
+          <div class="ringWrap">
+            <div class="ring warn" id="ring17"></div>
+            <div class="ringCenter">
+              <div class="ringPct" id="gm17Txt">—</div>
+              <div class="ringNote">17人毛利率</div>
+            </div>
           </div>
         </div>
 
-        <div class="pill" id="riskPill">—</div>
-      </div>
-      <div class="underNote">目標毛利率：<span id="targetGmTxt">20%</span></div>
-    </article>
+        <div class="underNote" id="peopleHint">建議出團：17人</div>
+      </article>
 
-    <!-- Suggest price -->
-    <article class="statCard green">
-      <div class="statHead">
-        <div class="statIcon">🎯</div>
-        <div class="statMeta">
-          <div class="statLabel">要「15人成團」建議一般價</div>
-          <div class="statValue" id="suggestNormalTxt">NT$ —</div>
-          <div class="statSub">會自動使用你選的尾數方式</div>
-        </div>
-      </div>
-
-      <div class="statViz">
-        <div class="spark line" id="sparkMargin"></div>
-      </div>
-      <div class="underNote">曲線：人數範圍內毛利率變化</div>
-    </article>
-  </section>
-
-  <section class="panel">
-    <div class="panelHead">
-      <h2>輸入區</h2>
-      <button class="ghostBtn" id="resetBtn" type="button">重設</button>
-    </div>
-
-    <div class="formGrid">
-      <!-- People -->
-      <div class="box">
-        <div class="boxTitle">人數</div>
-
-        <div class="row2">
-          <div class="col">
-            <label>目標人數</label>
-            <input id="targetPeople" type="number" min="1" value="20">
-          </div>
-          <div class="col">
-            <label>早鳥人數</label>
-            <input id="earlyCount" type="number" min="0" value="6">
+      <article class="statCard cool">
+        <div class="statHead">
+          <div class="statIcon">🧾</div>
+          <div class="statMeta">
+            <div class="statLabel">每人成本</div>
+            <div class="statValue" id="costPerTxt">NT$ 0</div>
+            <div class="statSub" id="feeSubTxt">尾款刷卡平均手續費：NT$ 0 / 人</div>
           </div>
         </div>
 
-        <div class="row2">
-          <div class="col">
-            <label>學員人數</label>
-            <input id="studentCount" type="number" min="0" value="4">
-          </div>
-          <div class="col">
-            <label>希望成團人數</label>
-            <input id="desiredPeople" type="number" min="1" value="15">
+        <div class="statViz">
+          <div class="miniStack" id="costStack"></div>
+        </div>
+
+        <div class="underNote" id="busHint">—</div>
+      </article>
+
+      <article class="statCard sand">
+        <div class="statHead">
+          <div class="statIcon">🚦</div>
+          <div class="statMeta">
+            <div class="statLabel">最低成團</div>
+            <div class="statValue" id="breakevenTxt">—</div>
+            <div class="statSub">以你目前的售價與成本估算</div>
           </div>
         </div>
 
-        <div class="note" id="capNote">建議出團人數：17人（目前巴士可載學生上限）</div>
+        <div class="statViz">
+          <div class="ringWrap">
+            <div class="ring warn" id="ringTarget"></div>
+            <div class="ringCenter">
+              <div class="ringPct" id="gmTargetTxt">—</div>
+              <div class="ringNote">目標人數毛利率</div>
+            </div>
+          </div>
+
+          <div class="pill" id="riskPill">—</div>
+        </div>
+
+        <div class="underNote">目標毛利率：<span id="targetGmTxt">20%</span></div>
+      </article>
+
+      <article class="statCard green">
+        <div class="statHead">
+          <div class="statIcon">🎯</div>
+          <div class="statMeta">
+            <div class="statLabel">要「15人成團」建議一般價</div>
+            <div class="statValue" id="suggestNormalTxt">NT$ —</div>
+            <div class="statSub">會自動使用你選的尾數方式</div>
+          </div>
+        </div>
+
+        <div class="statViz">
+          <div class="spark" id="sparkMargin"></div>
+        </div>
+
+        <div class="underNote">曲線：人數範圍內毛利率變化</div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panelHead">
+        <h2>輸入區</h2>
+        <button class="ghostBtn" id="resetBtn" type="button">重設</button>
       </div>
 
-      <!-- Pricing -->
-      <div class="box">
-        <div class="boxTitle">售價</div>
+      <div class="formGrid">
+        <div class="box">
+          <div class="boxTitle">人數</div>
 
-        <div class="row">
-          <label>一般價</label>
-          <div class="money">
-            <span class="unit">NT$</span>
-            <input id="priceNormal" type="text" inputmode="numeric" value="45,800">
+          <div class="row2">
+            <div class="col">
+              <label>目標人數</label>
+              <input id="targetPeople" type="number" min="1" value="20">
+            </div>
+            <div class="col">
+              <label>早鳥人數</label>
+              <input id="earlyCount" type="number" min="0" value="6">
+            </div>
           </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>學員人數</label>
+              <input id="studentCount" type="number" min="0" value="4">
+            </div>
+            <div class="col">
+              <label>希望成團人數</label>
+              <input id="desiredPeople" type="number" min="1" value="15">
+            </div>
+          </div>
+
+          <div class="note" id="capNote">建議出團人數：17人（目前巴士可載學生上限）</div>
         </div>
 
-        <div class="row2">
-          <div class="col">
-            <label>早鳥折扣</label>
+        <div class="box">
+          <div class="boxTitle">售價</div>
+
+          <div class="row">
+            <label>一般價</label>
             <div class="money">
               <span class="unit">NT$</span>
-              <input id="earlyDiscount" type="text" inputmode="numeric" value="2,000">
+              <input id="priceNormal" type="text" inputmode="numeric" value="45,800">
             </div>
           </div>
-          <div class="col">
-            <label>早鳥價</label>
-            <div class="pill big" id="priceEarlyTxt">NT$ —</div>
+
+          <div class="row2">
+            <div class="col">
+              <label>早鳥折扣</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="earlyDiscount" type="text" inputmode="numeric" value="2,000">
+              </div>
+            </div>
+            <div class="col">
+              <label>早鳥價</label>
+              <div class="pill big" id="priceEarlyTxt">NT$ —</div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>學員價 = 成本 +</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="studentBuffer" type="text" inputmode="numeric" value="2,000">
+              </div>
+            </div>
+            <div class="col">
+              <label>學員價</label>
+              <div class="pill big" id="priceStudentTxt">NT$ —</div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>建議定價尾數</label>
+              <select id="priceEnding">
+                <option value="hundred">整百</option>
+                <option value="800" selected>尾數 800</option>
+                <option value="900">尾數 900</option>
+              </select>
+            </div>
+            <div class="col">
+              <label>目標毛利率</label>
+              <div class="inline">
+                <input id="targetGM" type="number" min="0" max="95" value="20">
+                <span class="unit2">%</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="row2">
-          <div class="col">
-            <label>學員價 = 成本 +</label>
+        <div class="box">
+          <div class="boxTitle">每人成本</div>
+
+          <div class="row2">
+            <div class="col">
+              <label>日方</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="costJapan" type="text" inputmode="numeric" value="25,000">
+              </div>
+            </div>
+            <div class="col">
+              <label>機票</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="costFlight" type="text" inputmode="numeric" value="10,500">
+              </div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>保險</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="costInsurance" type="text" inputmode="numeric" value="600">
+              </div>
+            </div>
+            <div class="col">
+              <label>網卡</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="costSim" type="text" inputmode="numeric" value="280">
+              </div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>手冊</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="costBook" type="text" inputmode="numeric" value="100">
+              </div>
+            </div>
+            <div class="col">
+              <label>大型巴士追加費（每人）</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="bigBusExtraPer" type="text" inputmode="numeric" value="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>其他每人</label>
             <div class="money">
               <span class="unit">NT$</span>
-              <input id="studentBuffer" type="text" inputmode="numeric" value="2,000">
+              <input id="costExtraPer" type="text" inputmode="numeric" value="0">
             </div>
-          </div>
-          <div class="col">
-            <label>學員價</label>
-            <div class="pill big" id="priceStudentTxt">NT$ —</div>
           </div>
         </div>
 
-        <div class="row2">
-          <div class="col">
-            <label>建議定價尾數</label>
-            <select id="priceEnding">
-              <option value="hundred">整百</option>
-              <option value="800" selected>尾數 800</option>
-              <option value="900">尾數 900</option>
-            </select>
+        <div class="box">
+          <div class="boxTitle">廣告與刷卡</div>
+
+          <div class="row2">
+            <div class="col">
+              <label>每位報名廣告成本</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="adCostPerSignup" type="text" inputmode="numeric" value="2,500">
+              </div>
+            </div>
+            <div class="col">
+              <label>其他固定費</label>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="fixedOther" type="text" inputmode="numeric" value="0">
+              </div>
+            </div>
           </div>
-          <div class="col">
-            <label>目標毛利率</label>
-            <div class="inline">
-              <input id="targetGM" type="number" min="0" max="95" value="20">
-              <span class="unit2">%</span>
+
+          <div class="row2">
+            <div class="col">
+              <label>訂金</label>
+              <div class="money disabled">
+                <span class="unit">NT$</span>
+                <input id="deposit" type="text" value="15,000" disabled>
+              </div>
+            </div>
+            <div class="col">
+              <label>尾款刷卡人數</label>
+              <input id="cardCount" type="number" min="0" value="2">
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="col">
+              <label>手續費率</label>
+              <div class="inline">
+                <input id="cardFeeRate" type="number" min="0" max="10" step="0.1" value="2.4">
+                <span class="unit2">%</span>
+              </div>
+            </div>
+            <div class="col">
+              <label>固定成本</label>
+              <div class="pill big" id="fixedTxt">NT$ —</div>
             </div>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Costs -->
-      <div class="box">
-        <div class="boxTitle">每人成本</div>
-
-        <div class="row2">
-          <div class="col">
-            <label>日方</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="costJapan" type="text" inputmode="numeric" value="25,000">
-            </div>
-          </div>
-          <div class="col">
-            <label>機票</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="costFlight" type="text" inputmode="numeric" value="10,500">
-            </div>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="col">
-            <label>保險</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="costInsurance" type="text" inputmode="numeric" value="600">
-            </div>
-          </div>
-          <div class="col">
-            <label>網卡</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="costSim" type="text" inputmode="numeric" value="280">
-            </div>
-          </div>
-        </div>
-
-        <div class="row2">
-          <div class="col">
-            <label>手冊</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="costBook" type="text" inputmode="numeric" value="100">
-            </div>
-          </div>
-          <div class="col">
-            <label>大型巴士追加費（每人）</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="bigBusExtraPer" type="text" inputmode="numeric" value="0">
-            </div>
-          </div>
-        </div>
-
-        <div class="row">
-          <label>其他每人</label>
-          <div class="money">
-            <span class="unit">NT$</span>
-            <input id="costExtraPer" type="text" inputmode="numeric" value="0">
-          </div>
+    <section class="panel">
+      <div class="panelHead">
+        <h2>人數 → 毛利率</h2>
+        <div class="range">
+          <span class="muted">範圍</span>
+          <input id="rangeFrom" type="number" min="1" value="10">
+          <span class="muted">～</span>
+          <input id="rangeTo" type="number" min="1" value="28">
         </div>
       </div>
 
-      <!-- Ads + Card fee (counts) -->
-      <div class="box">
-        <div class="boxTitle">廣告與刷卡</div>
+      <div class="list" id="marginList"></div>
+    </section>
 
-        <div class="row2">
-          <div class="col">
-            <label>每位報名廣告成本</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="adCostPerSignup" type="text" inputmode="numeric" value="2,500">
+    <footer class="footer">
+      <div class="muted">✓ 會自動保存你輸入的數字</div>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const $ = (id) => document.getElementById(id);
+      const STORAGE_KEY = "mk_trip_pricing_single_html_v1";
+      let ticketMode = "include";
+      const RECOMMENDED_CAP = 17;
+
+      function parseMoney(v){
+        const s = String(v ?? "").replace(/,/g,"").replace(/[^\d]/g,"");
+        return Number(s) || 0;
+      }
+      function fmtMoney(n){
+        if (!Number.isFinite(n)) return "NT$ —";
+        return "NT$ " + Math.round(n).toLocaleString("zh-TW");
+      }
+      function fmtPct(p){
+        if (!Number.isFinite(p)) return "—";
+        return (p*100).toFixed(1) + "%";
+      }
+      function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+      function formatCommaKeepCursor(input){
+        const old = input.value;
+        const oldPos = input.selectionStart ?? old.length;
+        const digitsLeft = old.slice(0, oldPos).replace(/[^\d]/g,'').length;
+
+        const cleaned = old.replace(/,/g,'').replace(/[^\d]/g,'');
+        const formatted = cleaned ? Number(cleaned).toLocaleString('zh-TW') : "";
+        input.value = formatted;
+
+        let pos = 0, seen = 0;
+        while (pos < formatted.length && seen < digitsLeft){
+          if (/\d/.test(formatted[pos])) seen++;
+          pos++;
+        }
+        input.setSelectionRange(pos,pos);
+      }
+
+      function setRing(el, pct, colorVar){
+        const deg = clamp(pct,0,1) * 360;
+        el.style.background = `conic-gradient(${colorVar} 0deg ${deg}deg, rgba(0,0,0,.06) ${deg}deg 360deg)`;
+      }
+
+      function setMiniStack(el, parts){
+        const total = parts.reduce((a,p)=>a+p.value, 0) || 1;
+        el.innerHTML = "";
+        parts.forEach(p=>{
+          const span = document.createElement("span");
+          span.style.width = (p.value/total*100).toFixed(2) + "%";
+          span.style.background = p.color;
+          el.appendChild(span);
+        });
+      }
+
+      function makeLineSVG(el, points){
+        const w = 220, h = 60, pad = 10;
+        const xs = points.map((_,i)=> pad + (i*(w-2*pad)/(points.length-1)));
+        const ys = points.map(v => pad + (1-v)*(h-2*pad));
+        const d = xs.map((x,i)=> `${i===0?'M':'L'} ${x.toFixed(2)} ${ys[i].toFixed(2)}`).join(" ");
+        el.innerHTML = `
+          <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+            <path d="${d}" fill="none" stroke="rgba(47,184,107,.85)" stroke-width="3" stroke-linecap="round"/>
+            <path d="${d} L ${w-pad} ${h-pad} L ${pad} ${h-pad} Z" fill="rgba(47,184,107,.10)"/>
+          </svg>
+        `;
+      }
+
+      function beautifyPriceUp(x, mode){
+        x = Math.ceil(x);
+        if (mode === "hundred") return Math.ceil(x / 100) * 100;
+        const end = Number(mode); // 800 or 900
+        const base = Math.floor(x / 1000) * 1000;
+        const candidate = base + end;
+        if (candidate >= x) return candidate;
+        return base + 1000 + end;
+      }
+
+      function compute(){
+        const targetPeople  = Math.max(1, Math.floor(Number($("targetPeople").value)||20));
+        const earlyCount    = Math.max(0, Math.floor(Number($("earlyCount").value)||0));
+        const studentCount  = Math.max(0, Math.floor(Number($("studentCount").value)||0));
+        const desiredPeople = Math.max(1, Math.floor(Number($("desiredPeople").value)||15));
+        const normalCount   = Math.max(0, targetPeople - earlyCount - studentCount);
+
+        let normalPrice = parseMoney($("priceNormal").value);
+        const earlyDiscount = parseMoney($("earlyDiscount").value);
+        const studentBuffer = parseMoney($("studentBuffer").value);
+        const endingMode = $("priceEnding").value;
+        const targetGM = clamp((Number($("targetGM").value)||20)/100, 0, 0.95);
+
+        const japan = parseMoney($("costJapan").value);
+        let flight  = parseMoney($("costFlight").value);
+        const ins   = parseMoney($("costInsurance").value);
+        const sim   = parseMoney($("costSim").value);
+        const book  = parseMoney($("costBook").value);
+        const bigBusExtraPer = parseMoney($("bigBusExtraPer").value);
+        const extraPer = parseMoney($("costExtraPer").value);
+
+        const adCostPerSignup = parseMoney($("adCostPerSignup").value);
+        const fixedOther = parseMoney($("fixedOther").value);
+        const fixed = adCostPerSignup * targetPeople + fixedOther;
+
+        const deposit = 15000;
+        const cardCount = Math.max(0, Math.floor(Number($("cardCount").value)||0));
+        const feeRate = clamp((Number($("cardFeeRate").value)||0)/100, 0, 0.2);
+
+        if (ticketMode === "exclude"){
+          flight = 0;
+          normalPrice = Math.max(0, normalPrice - 10000);
+        }
+
+        const baseCost = japan + flight + ins + sim + book + bigBusExtraPer + extraPer;
+
+        const earlyPrice = Math.max(0, normalPrice - earlyDiscount);
+        const studentPrice = baseCost + studentBuffer;
+
+        const total = targetPeople;
+        const avgPriceBeforeFee =
+          (normalPrice * normalCount + earlyPrice * earlyCount + studentPrice * studentCount) / Math.max(1, total);
+
+        const remainderPer = Math.max(0, avgPriceBeforeFee - deposit);
+        const totalCardFee = remainderPer * cardCount * feeRate;
+        const avgCardFeePer = totalCardFee / Math.max(1, total);
+
+        const costPer = baseCost + avgCardFeePer;
+
+        let breakeven = Infinity;
+        if (avgPriceBeforeFee > costPer){
+          breakeven = Math.ceil(fixed / (avgPriceBeforeFee - costPer));
+          breakeven = Math.max(1, breakeven);
+        }
+
+        const gmAt = (n) => {
+          const revenue = avgPriceBeforeFee * n;
+          const cost = costPer * n + fixed;
+          return revenue > 0 ? (revenue - cost) / revenue : 0;
+        };
+
+        const avgRequired = costPer + (fixed / desiredPeople);
+        const denom = (normalCount + earlyCount);
+        let suggestedNormal = Infinity;
+        if (denom > 0){
+          const rawNormal = (avgRequired * total + earlyDiscount * earlyCount - studentPrice * studentCount) / denom;
+          suggestedNormal = beautifyPriceUp(rawNormal, endingMode);
+        }
+
+        return {
+          targetPeople, earlyCount, studentCount, normalCount, desiredPeople,
+          normalPrice, earlyPrice, studentPrice,
+          baseCost, avgCardFeePer, costPer,
+          fixed, avgPriceBeforeFee,
+          breakeven,
+          gm15: gmAt(15),
+          gm17: gmAt(RECOMMENDED_CAP),
+          gmTarget: gmAt(targetPeople),
+          targetGM,
+          suggestedNormal,
+          japan, flight, ins, sim, book, bigBusExtraPer, extraPer
+        };
+      }
+
+      function grossMarginRate(m, n){
+        const revenue = m.avgPriceBeforeFee * n;
+        const cost = m.costPer * n + m.fixed;
+        return revenue > 0 ? (revenue - cost) / revenue : 0;
+      }
+      function grossProfit(m, n){
+        const revenue = m.avgPriceBeforeFee * n;
+        const cost = m.costPer * n + m.fixed;
+        return revenue - cost;
+      }
+
+      function setPillStyle(type){
+        const el = $("riskPill");
+        if (type === "danger"){
+          el.style.borderColor = "rgba(240,90,90,.35)";
+          el.style.color = "rgba(240,90,90,.95)";
+        }else if (type === "warn"){
+          el.style.borderColor = "rgba(255,176,32,.35)";
+          el.style.color = "rgba(160,110,0,.95)";
+        }else{
+          el.style.borderColor = "rgba(47,184,107,.30)";
+          el.style.color = "rgba(20,120,70,.95)";
+        }
+      }
+
+      function renderMarginList(m, from, to){
+        const rows = [];
+        for (let n=from; n<=to; n++){
+          const gm = grossMarginRate(m, n);
+          const gp = grossProfit(m, n);
+
+          let icon = "✅";
+          if (m.breakeven !== Infinity && n < m.breakeven) icon = "⛔";
+          else if (gm < m.targetGM) icon = "⚠️";
+
+          rows.push(`
+            <div class="item">
+              <div class="left">
+                <div class="badge">${icon}</div>
+                <div class="meta">
+                  <div class="t">${n} 人</div>
+                  <div class="s">平均售價 ${fmtMoney(m.avgPriceBeforeFee)} / 人　每人成本 ${fmtMoney(m.costPer)} / 人　固定成本 ${fmtMoney(m.fixed)}</div>
+                </div>
+              </div>
+              <div class="right">
+                <div class="gm">${fmtPct(gm)}</div>
+                <div class="gp">毛利 ${fmtMoney(gp)}</div>
+              </div>
             </div>
-          </div>
-          <div class="col">
-            <label>其他固定費</label>
-            <div class="money">
-              <span class="unit">NT$</span>
-              <input id="fixedOther" type="text" inputmode="numeric" value="0">
-            </div>
-          </div>
-        </div>
+          `);
+        }
+        $("marginList").innerHTML = rows.join("");
+      }
 
-        <div class="row2">
-          <div class="col">
-            <label>訂金</label>
-            <div class="money disabled">
-              <span class="unit">NT$</span>
-              <input id="deposit" type="text" value="15,000" disabled>
-            </div>
-          </div>
-          <div class="col">
-            <label>尾款刷卡人數</label>
-            <input id="cardCount" type="number" min="0" value="2">
-          </div>
-        </div>
+      function render(){
+        const m = compute();
 
-        <div class="row2">
-          <div class="col">
-            <label>手續費率</label>
-            <div class="inline">
-              <input id="cardFeeRate" type="number" min="0" max="10" step="0.1" value="2.4">
-              <span class="unit2">%</span>
-            </div>
-          </div>
-          <div class="col">
-            <label>固定成本</label>
-            <div class="pill big" id="fixedTxt">NT$ —</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+        $("cntNormalTxt").textContent  = `${m.normalCount}人`;
+        $("cntEarlyTxt").textContent   = `${m.earlyCount}人`;
+        $("cntStudentTxt").textContent = `${m.studentCount}人`;
 
-  <!-- Margin list -->
-  <section class="panel">
-    <div class="panelHead">
-      <h2>人數 → 毛利率</h2>
-      <div class="range">
-        <span class="muted">範圍</span>
-        <input id="rangeFrom" type="number" min="1" value="10">
-        <span class="muted">～</span>
-        <input id="rangeTo" type="number" min="1" value="28">
-      </div>
-    </div>
+        $("priceEarlyTxt").textContent   = fmtMoney(m.earlyPrice);
+        $("priceStudentTxt").textContent = fmtMoney(m.studentPrice);
 
-    <div class="list" id="marginList"></div>
-  </section>
+        $("avgPriceTxt").textContent = fmtMoney(m.avgPriceBeforeFee);
+        $("costPerTxt").textContent  = fmtMoney(m.costPer);
+        $("feeSubTxt").textContent   = `尾款刷卡平均手續費：${fmtMoney(m.avgCardFeePer)} / 人`;
+        $("fixedTxt").textContent    = fmtMoney(m.fixed);
+        $("targetGmTxt").textContent = Math.round(m.targetGM*100) + "%";
 
-  <footer class="footer">
-    <div class="muted">✓ 會自動保存你輸入的數字</div>
-  </footer>
-</div>
-    <script  src="./script.js"></script>
+        // Bus cap hint
+        if (m.targetPeople > RECOMMENDED_CAP){
+          $("capNote").textContent = `你填的目標人數 ${m.targetPeople} 人超過 17 人，可能需要大型巴士加價`;
+          $("capNote").style.borderColor = "rgba(255,176,32,.35)";
+        }else{
+          $("capNote").textContent = "建議出團人數：17人（目前巴士可載學生上限）";
+          $("capNote").style.borderColor = "rgba(0,0,0,.06)";
+        }
+        $("peopleHint").textContent = `建議出團：17人｜你目前目標：${m.targetPeople}人`;
+        $("busHint").textContent = (m.bigBusExtraPer > 0)
+          ? `已加入大型巴士追加費：${fmtMoney(m.bigBusExtraPer)} / 人`
+          : `大型巴士追加費目前為 0`;
 
-  </body>
-  
+        // Rings fill relative to target GM
+        const p15 = m.targetGM > 0 ? clamp(m.gm15 / m.targetGM, 0, 1) : clamp(m.gm15,0,1);
+        const p17 = m.targetGM > 0 ? clamp(m.gm17 / m.targetGM, 0, 1) : clamp(m.gm17,0,1);
+        const pT  = m.targetGM > 0 ? clamp(m.gmTarget / m.targetGM, 0, 1) : clamp(m.gmTarget,0,1);
+
+        setRing($("ring15"), p15, "var(--orange)");
+        setRing($("ring17"), p17, "var(--gold)");
+        setRing($("ringTarget"), pT, "var(--gold)");
+
+        $("gm15Txt").textContent = fmtPct(m.gm15);
+        $("gm17Txt").textContent = fmtPct(m.gm17);
+        $("gmTargetTxt").textContent = fmtPct(m.gmTarget);
+
+        // breakeven + risk
+        if (m.breakeven === Infinity){
+          $("breakevenTxt").textContent = "—";
+          $("riskPill").textContent = "售價低於成本，無法成團";
+          setPillStyle("danger");
+        }else{
+          $("breakevenTxt").textContent = `${m.breakeven} 人`;
+          if (m.targetPeople < m.breakeven){
+            $("riskPill").textContent = "目標人數不足，風險高";
+            setPillStyle("danger");
+          }else if (m.gmTarget < m.targetGM){
+            $("riskPill").textContent = "可成團，但毛利偏低";
+            setPillStyle("warn");
+          }else{
+            $("riskPill").textContent = "狀態良好";
+            setPillStyle("ok");
+          }
+        }
+
+        // suggestion
+        $("suggestNormalTxt").textContent =
+          (Number.isFinite(m.suggestedNormal) && m.suggestedNormal !== Infinity)
+            ? fmtMoney(m.suggestedNormal)
+            : "NT$ —";
+
+        // cost stack
+        setMiniStack($("costStack"), [
+          {name:"日方", value:m.japan, color:"rgba(42,125,255,.35)"},
+          {name:"機票", value:m.flight, color:"rgba(255,106,43,.30)"},
+          {name:"保險", value:m.ins, color:"rgba(47,184,107,.28)"},
+          {name:"網卡", value:m.sim, color:"rgba(255,176,32,.28)"},
+          {name:"手冊", value:m.book, color:"rgba(0,0,0,.10)"},
+          {name:"巴士", value:m.bigBusExtraPer, color:"rgba(194,138,74,.25)"},
+          {name:"刷卡", value:m.avgCardFeePer, color:"rgba(255,0,100,.12)"},
+          {name:"其他", value:m.extraPer, color:"rgba(0,0,0,.06)"},
+        ]);
+
+        // margin curve + list
+        const from = Math.max(1, Math.floor(Number($("rangeFrom").value)||10));
+        const to   = Math.max(from, Math.floor(Number($("rangeTo").value)||28));
+        const pts = [];
+        const steps = 10;
+        for (let i=0;i<steps;i++){
+          const n = from + (to-from) * (i/(steps-1));
+          pts.push(clamp(grossMarginRate(m, n), 0, 1));
+        }
+        makeLineSVG($("sparkMargin"), pts);
+        renderMarginList(m, from, to);
+
+        save();
+      }
+
+      function save(){
+        const data = { ticketMode };
+        document.querySelectorAll("input, select").forEach(el=> data[el.id] = el.value);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+      function load(){
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try{
+          const data = JSON.parse(raw);
+          if (data.ticketMode) ticketMode = data.ticketMode;
+          Object.keys(data).forEach(k=>{
+            const el = document.getElementById(k);
+            if (el) el.value = data[k];
+          });
+        }catch{}
+      }
+
+      function attachMoney(id){
+        const input = $(id);
+        input.addEventListener("input", ()=>{
+          formatCommaKeepCursor(input);
+          render();
+        });
+        input.addEventListener("blur", ()=>{
+          const v = parseMoney(input.value);
+          input.value = v ? v.toLocaleString("zh-TW") : "";
+          render();
+        });
+      }
+
+      function setMode(mode){
+        ticketMode = mode;
+        $("modeInclude").classList.toggle("active", mode==="include");
+        $("modeExclude").classList.toggle("active", mode==="exclude");
+        render();
+      }
+
+      function bind(){
+        ["priceNormal","earlyDiscount","studentBuffer","costJapan","costFlight","costInsurance","costSim","costBook","bigBusExtraPer","costExtraPer","adCostPerSignup","fixedOther"]
+          .forEach(attachMoney);
+
+        ["targetPeople","earlyCount","studentCount","desiredPeople","targetGM","cardCount","cardFeeRate","rangeFrom","rangeTo","priceEnding"]
+          .forEach(id=>{
+            $(id).addEventListener("input", render);
+            $(id).addEventListener("change", render);
+          });
+
+        $("modeInclude").addEventListener("click", ()=>setMode("include"));
+        $("modeExclude").addEventListener("click", ()=>setMode("exclude"));
+
+        $("resetBtn").addEventListener("click", ()=>{
+          localStorage.removeItem(STORAGE_KEY);
+
+          ticketMode = "include";
+          $("targetPeople").value = 20;
+          $("earlyCount").value = 6;
+          $("studentCount").value = 4;
+          $("desiredPeople").value = 15;
+
+          $("priceNormal").value = "45,800";
+          $("earlyDiscount").value = "2,000";
+          $("studentBuffer").value = "2,000";
+          $("priceEnding").value = "800";
+          $("targetGM").value = 20;
+
+          $("costJapan").value = "25,000";
+          $("costFlight").value = "10,500";
+          $("costInsurance").value = "600";
+          $("costSim").value = "280";
+          $("costBook").value = "100";
+          $("bigBusExtraPer").value = "0";
+          $("costExtraPer").value = "0";
+
+          $("adCostPerSignup").value = "2,500";
+          $("fixedOther").value = "0";
+
+          $("cardCount").value = 2;
+          $("cardFeeRate").value = 2.4;
+
+          $("rangeFrom").value = 10;
+          $("rangeTo").value = 28;
+
+          setMode("include");
+        });
+      }
+
+      load();
+      bind();
+      setMode(ticketMode);
+      render();
+    });
+  </script>
+</body>
 </html>
