@@ -10,6 +10,7 @@
       --panel:#ffffff;
       --text:#1b1b1b;
       --muted:#6e6e6e;
+      --hint:#8a8a8a;
       --line:rgba(0,0,0,.08);
       --shadow:0 18px 50px rgba(0,0,0,.08);
       --radius:26px;
@@ -44,6 +45,11 @@
     h1{ margin:0; font-size:22px; letter-spacing:.2px; }
     .subtitle{ margin:6px 0 0; color:var(--muted); font-size:13px; }
 
+    .rightHead{
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
     .segmented{
       display:flex; gap:10px;
       background:rgba(255,255,255,.65);
@@ -64,6 +70,28 @@
       box-shadow:0 10px 24px rgba(255,95,31,.25);
     }
 
+    .primaryBtn{
+      border:none;
+      border-radius:999px;
+      padding:12px 14px;
+      font-weight:950;
+      cursor:pointer;
+      color:#fff;
+      background:linear-gradient(180deg, #2fb86b, #22a85c);
+      box-shadow:0 12px 26px rgba(47,184,107,.25);
+      display:flex; align-items:center; gap:8px;
+    }
+    .ghostBtn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:12px 14px;
+      font-weight:950;
+      cursor:pointer;
+      box-shadow:0 10px 22px rgba(0,0,0,.06);
+      display:flex; align-items:center; gap:8px;
+    }
+
     .grid2{
       display:grid;
       grid-template-columns:repeat(2, minmax(0,1fr));
@@ -73,6 +101,7 @@
     @media (max-width: 760px){
       body{padding:16px}
       .topbar{flex-direction:column; align-items:flex-start}
+      .rightHead{justify-content:flex-start}
       .grid2{grid-template-columns:1fr}
     }
 
@@ -118,7 +147,6 @@
       box-shadow:0 10px 22px rgba(0,0,0,.08);
     }
     .ring.warn{ background: conic-gradient(var(--gold) 0deg, rgba(0,0,0,.06) 0deg); }
-    .ring.ok{ background: conic-gradient(var(--ok) 0deg, rgba(0,0,0,.06) 0deg); }
 
     .ringCenter{
       position:absolute; inset:10px;
@@ -188,16 +216,6 @@
     }
     .panelHead h2{ margin:0; font-size:16px; letter-spacing:.2px; }
 
-    .ghostBtn{
-      border:1px solid var(--line);
-      background:#fff;
-      border-radius:14px;
-      padding:10px 12px;
-      font-weight:900;
-      cursor:pointer;
-      box-shadow:0 10px 22px rgba(0,0,0,.06);
-    }
-
     .formGrid{
       display:grid;
       grid-template-columns:repeat(2, minmax(0,1fr));
@@ -233,6 +251,15 @@
       margin-bottom:6px;
     }
 
+    .help{
+      display:block;
+      font-size:11px;
+      color:var(--hint);
+      font-weight:900;
+      margin:-4px 0 6px;
+      letter-spacing:.1px;
+    }
+
     input{
       width:100%;
       padding:12px 12px;
@@ -247,7 +274,7 @@
     /* placeholder 淡灰 */
     input::placeholder{
       color: rgba(0,0,0,.30);
-      font-weight:900;
+      font-weight:950;
     }
 
     .money{
@@ -272,16 +299,6 @@
 
     .inline{ display:flex; align-items:center; gap:10px; }
     .unit2{ font-weight:900; color:rgba(0,0,0,.50); }
-
-    .note{
-      margin-top:10px;
-      font-size:12px;
-      color:rgba(0,0,0,.55);
-      background:rgba(0,0,0,.03);
-      border:1px solid rgba(0,0,0,.06);
-      padding:10px 12px;
-      border-radius:18px;
-    }
 
     .range{ display:flex; align-items:center; gap:10px; }
     .range input{ width:82px; padding:10px 10px; }
@@ -319,8 +336,27 @@
     .right .gm{ font-weight:950; font-size:14px; }
     .right .gp{ margin-top:4px; font-size:11px; color:rgba(0,0,0,.55); }
 
-    .muted{ color:var(--muted); }
     .footer{ text-align:center; padding:8px 0 0; font-size:12px; }
+    .muted{ color:var(--muted); }
+
+    /* toast */
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%);
+      background:rgba(27,27,27,.92);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      opacity:0;
+      pointer-events:none;
+      transition:.22s ease;
+      box-shadow:0 16px 38px rgba(0,0,0,.18);
+    }
+    .toast.show{ opacity:1; }
   </style>
 </head>
 
@@ -332,9 +368,15 @@
         <p class="subtitle">輸入人數與成本後，自動試算「建議售價 / 成團線 / 毛利率」</p>
       </div>
 
-      <div class="segmented">
-        <button class="segBtn active" id="modeInclude" type="button">含機票</button>
-        <button class="segBtn" id="modeExclude" type="button">不含機票</button>
+      <div class="rightHead">
+        <button class="primaryBtn" id="fillSuggestBtn" type="button">✨ 自動填入建議數字</button>
+
+        <div class="segmented">
+          <button class="segBtn active" id="modeInclude" type="button">含機票</button>
+          <button class="segBtn" id="modeExclude" type="button">不含機票</button>
+        </div>
+
+        <button class="ghostBtn" id="resetBtn" type="button">🧹 清空</button>
       </div>
     </header>
 
@@ -386,7 +428,7 @@
           <div class="miniStack" id="costStack"></div>
         </div>
 
-        <div class="underNote" id="busHint">—</div>
+        <div class="underNote" id="busHint">大型巴士追加費未填</div>
       </article>
 
       <article class="statCard sand">
@@ -435,7 +477,6 @@
     <section class="panel">
       <div class="panelHead">
         <h2>輸入區</h2>
-        <button class="ghostBtn" id="resetBtn" type="button">清空</button>
       </div>
 
       <div class="formGrid">
@@ -445,26 +486,30 @@
           <div class="row2">
             <div>
               <label>目標人數</label>
-              <input id="targetPeople" type="number" min="1" placeholder="建議：20">
+              <span class="help">建議：20（你們理想人數）</span>
+              <input id="targetPeople" type="number" min="1" placeholder="20">
             </div>
             <div>
               <label>希望成團人數</label>
-              <input id="desiredPeople" type="number" min="1" placeholder="建議：15">
+              <span class="help">常用：15（你想要的「保底」）</span>
+              <input id="desiredPeople" type="number" min="1" placeholder="15">
             </div>
           </div>
 
           <div class="row2">
             <div>
               <label>早鳥人數</label>
-              <input id="earlyCount" type="number" min="0" placeholder="建議：0～10">
+              <span class="help">區間：0～10（看你本團策略）</span>
+              <input id="earlyCount" type="number" min="0" placeholder="0">
             </div>
             <div>
               <label>學員人數</label>
-              <input id="studentCount" type="number" min="0" placeholder="建議：0～10">
+              <span class="help">區間：0～10（學員價通常接近成本）</span>
+              <input id="studentCount" type="number" min="0" placeholder="0">
             </div>
           </div>
 
-          <div class="note" id="capNote">建議出團人數：17人（目前巴士可載學生上限）</div>
+          <div class="underNote" id="capNote">建議出團人數：17人（目前巴士可載學生上限）</div>
         </div>
 
         <div class="box">
@@ -472,22 +517,25 @@
 
           <div class="row">
             <label>一般價</label>
+            <span class="help">例：45,800（你給的範例）</span>
             <div class="money">
               <span class="unit">NT$</span>
-              <input id="priceNormal" type="text" inputmode="numeric" placeholder="例如：45,800（或填你預計的售價）">
+              <input id="priceNormal" type="text" inputmode="numeric" placeholder="45,800">
             </div>
           </div>
 
           <div class="row2">
             <div>
               <label>早鳥折扣</label>
+              <span class="help">區間：1,000～3,000</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="earlyDiscount" type="text" inputmode="numeric" placeholder="例如：1,000～3,000">
+                <input id="earlyDiscount" type="text" inputmode="numeric" placeholder="2,000">
               </div>
             </div>
             <div>
               <label>早鳥價</label>
+              <span class="help">自動計算</span>
               <div class="pill big" id="priceEarlyTxt">NT$ —</div>
             </div>
           </div>
@@ -495,13 +543,15 @@
           <div class="row2">
             <div>
               <label>學員價加成</label>
+              <span class="help">區間：0～2,000</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="studentBuffer" type="text" inputmode="numeric" placeholder="例如：0～2,000（學員價通常接近成本）">
+                <input id="studentBuffer" type="text" inputmode="numeric" placeholder="0">
               </div>
             </div>
             <div>
               <label>學員價</label>
+              <span class="help">自動計算（成本＋加成）</span>
               <div class="pill big" id="priceStudentTxt">NT$ —</div>
             </div>
           </div>
@@ -509,14 +559,32 @@
           <div class="row2">
             <div>
               <label>目標毛利率</label>
+              <span class="help">例：20%</span>
               <div class="inline">
-                <input id="targetGM" type="number" min="0" max="95" placeholder="例如：20">
+                <input id="targetGM" type="number" min="0" max="95" placeholder="20">
                 <span class="unit2">%</span>
               </div>
             </div>
             <div>
               <label>定價尾數</label>
-              <div class="pill big">固定：尾數 980</div>
+              <span class="help">固定（不可改）</span>
+              <div class="pill big">尾數 980</div>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label>訂金</label>
+              <span class="help">固定</span>
+              <div class="pill big">NT$ 15,000</div>
+            </div>
+            <div>
+              <label>不含機票方案價差</label>
+              <span class="help">例：10,000（你之前提到 -10,000）</span>
+              <div class="money">
+                <span class="unit">NT$</span>
+                <input id="excludeDelta" type="text" inputmode="numeric" placeholder="10,000">
+              </div>
             </div>
           </div>
         </div>
@@ -527,16 +595,18 @@
           <div class="row2">
             <div>
               <label>日方</label>
+              <span class="help">區間：23,000～27,000</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="costJapan" type="text" inputmode="numeric" placeholder="建議：23,000～27,000">
+                <input id="costJapan" type="text" inputmode="numeric" placeholder="25,000">
               </div>
             </div>
             <div>
               <label>機票</label>
+              <span class="help">便宜：9,000～12,000｜貴：16,000～18,000</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="costFlight" type="text" inputmode="numeric" placeholder="便宜：9,000～12,000｜貴：16,000～18,000">
+                <input id="costFlight" type="text" inputmode="numeric" placeholder="12,000">
               </div>
             </div>
           </div>
@@ -544,16 +614,18 @@
           <div class="row2">
             <div>
               <label>保險</label>
+              <span class="help">區間：550～650</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="costInsurance" type="text" inputmode="numeric" placeholder="建議：550～650">
+                <input id="costInsurance" type="text" inputmode="numeric" placeholder="600">
               </div>
             </div>
             <div>
               <label>網卡</label>
+              <span class="help">區間：250～300</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="costSim" type="text" inputmode="numeric" placeholder="建議：250～300">
+                <input id="costSim" type="text" inputmode="numeric" placeholder="280">
               </div>
             </div>
           </div>
@@ -561,25 +633,28 @@
           <div class="row2">
             <div>
               <label>手冊</label>
+              <span class="help">區間：90～110</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="costBook" type="text" inputmode="numeric" placeholder="建議：90～110">
+                <input id="costBook" type="text" inputmode="numeric" placeholder="100">
               </div>
             </div>
             <div>
               <label>大型巴士追加費（每人）</label>
+              <span class="help">超過17人可能需要（先留空也可）</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="bigBusExtraPer" type="text" inputmode="numeric" placeholder="若超過17人可能需要，例如：1,000～3,000">
+                <input id="bigBusExtraPer" type="text" inputmode="numeric" placeholder="0">
               </div>
             </div>
           </div>
 
           <div class="row">
             <label>其他每人</label>
+            <span class="help">沒有就留空</span>
             <div class="money">
               <span class="unit">NT$</span>
-              <input id="costExtraPer" type="text" inputmode="numeric" placeholder="沒有就留空">
+              <input id="costExtraPer" type="text" inputmode="numeric" placeholder="0">
             </div>
           </div>
         </div>
@@ -590,42 +665,48 @@
           <div class="row2">
             <div>
               <label>每位報名廣告成本</label>
+              <span class="help">區間：1,500～3,500（會乘上「目標人數」當廣告總預算）</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="adCostPerSignup" type="text" inputmode="numeric" placeholder="例如：1,500～3,500">
+                <input id="adCostPerSignup" type="text" inputmode="numeric" placeholder="2,500">
               </div>
             </div>
             <div>
               <label>其他固定費</label>
+              <span class="help">匯款/匯差/印刷/雜支等</span>
               <div class="money">
                 <span class="unit">NT$</span>
-                <input id="fixedOther" type="text" inputmode="numeric" placeholder="例如：匯款/匯差/印刷等（沒有就留空）">
+                <input id="fixedOther" type="text" inputmode="numeric" placeholder="0">
               </div>
             </div>
           </div>
 
           <div class="row2">
             <div>
-              <label>訂金（固定）</label>
-              <div class="pill big">NT$ 15,000</div>
-            </div>
-            <div>
               <label>尾款刷卡人數</label>
-              <input id="cardCount" type="number" min="0" placeholder="刷卡通常低於10%，例如：0～2">
+              <span class="help">刷卡通常低於10%（例：0～2）</span>
+              <input id="cardCount" type="number" min="0" placeholder="1">
             </div>
-          </div>
-
-          <div class="row2">
             <div>
               <label>手續費率</label>
+              <span class="help">例：2.4%</span>
               <div class="inline">
-                <input id="cardFeeRate" type="number" min="0" max="10" step="0.1" placeholder="例如：2.4">
+                <input id="cardFeeRate" type="number" min="0" max="10" step="0.1" placeholder="2.4">
                 <span class="unit2">%</span>
               </div>
             </div>
+          </div>
+
+          <div class="row2">
             <div>
               <label>固定成本</label>
+              <span class="help">自動計算：廣告總預算＋其他固定費</span>
               <div class="pill big" id="fixedTxt">NT$ —</div>
+            </div>
+            <div>
+              <label>提示</label>
+              <span class="help">你可以先按「自動填入建議數字」快速得到一版基準</span>
+              <div class="pill big">先填大方向，再微調</div>
             </div>
           </div>
         </div>
@@ -637,9 +718,9 @@
         <h2>人數 → 毛利率</h2>
         <div class="range">
           <span class="muted">範圍</span>
-          <input id="rangeFrom" type="number" min="1" placeholder="例如：10">
+          <input id="rangeFrom" type="number" min="1" placeholder="10">
           <span class="muted">～</span>
-          <input id="rangeTo" type="number" min="1" placeholder="例如：28">
+          <input id="rangeTo" type="number" min="1" placeholder="28">
         </div>
       </div>
 
@@ -651,20 +732,23 @@
     </footer>
   </div>
 
+  <div class="toast" id="toast">已填入建議數字</div>
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const $ = (id) => document.getElementById(id);
+
       let ticketMode = "include";
       const RECOMMENDED_CAP = 17;
       const DEPOSIT = 15000;
-      const FIXED_ENDING = 980;
+      const ENDING = 980;
 
       function parseMoney(v){
         const s = String(v ?? "").replace(/,/g,"").replace(/[^\d]/g,"");
-        return s ? Number(s) : NaN;
+        return Number(s) || 0;
       }
       function fmtMoney(n){
-        if (!Number.isFinite(n)) return "NT$ —";
+        if (!Number.isFinite(n) || n === 0) return "NT$ —";
         return "NT$ " + Math.round(n).toLocaleString("zh-TW");
       }
       function fmtPct(p){
@@ -708,7 +792,6 @@
 
       function makeLineSVG(el, points){
         const w = 220, h = 60, pad = 10;
-        if (!points.length) { el.innerHTML = ""; return; }
         const xs = points.map((_,i)=> pad + (i*(w-2*pad)/(points.length-1)));
         const ys = points.map(v => pad + (1-v)*(h-2*pad));
         const d = xs.map((x,i)=> `${i===0?'M':'L'} ${x.toFixed(2)} ${ys[i].toFixed(2)}`).join(" ");
@@ -720,123 +803,119 @@
         `;
       }
 
-      // 固定尾數 980（往上取整）
-      function beautifyPriceUpTo980(x){
-        if (!Number.isFinite(x)) return Infinity;
+      function beautifyUpTo980(x){
         x = Math.ceil(x);
         const base = Math.floor(x / 1000) * 1000;
-        const candidate = base + FIXED_ENDING;
+        const candidate = base + ENDING;
         if (candidate >= x) return candidate;
-        return base + 1000 + FIXED_ENDING;
+        return base + 1000 + ENDING;
       }
 
-      function safeNum(v, fallback){
-        return Number.isFinite(v) ? v : fallback;
+      function getInt(id, fallback){
+        const v = Number($(id).value);
+        return Number.isFinite(v) && $(id).value !== "" ? Math.floor(v) : fallback;
+      }
+      function getMoney(id, fallback){
+        const raw = $(id).value;
+        return raw !== "" ? parseMoney(raw) : fallback;
+      }
+      function toast(msg){
+        const t = $("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(()=>t.classList.remove("show"), 1100);
       }
 
       function compute(){
-        // 人數（若沒填，就用 placeholder 的「建議值」當 fallback）
-        const targetPeople  = Math.max(1, Math.floor(Number($("targetPeople").value) || 20));
-        const desiredPeople = Math.max(1, Math.floor(Number($("desiredPeople").value) || 15));
-        const earlyCount    = Math.max(0, Math.floor(Number($("earlyCount").value) || 0));
-        const studentCount  = Math.max(0, Math.floor(Number($("studentCount").value) || 0));
+        const targetPeople  = Math.max(1, getInt("targetPeople", 20));
+        const desiredPeople = Math.max(1, getInt("desiredPeople", 15));
+        const earlyCount    = Math.max(0, getInt("earlyCount", 0));
+        const studentCount  = Math.max(0, getInt("studentCount", 0));
         const normalCount   = Math.max(0, targetPeople - earlyCount - studentCount);
 
-        // 售價
-        let normalPrice = parseMoney($("priceNormal").value);
-        const earlyDiscount = parseMoney($("earlyDiscount").value);
-        const studentBuffer = parseMoney($("studentBuffer").value);
-        const targetGM = clamp(((Number($("targetGM").value) || 20) / 100), 0, 0.95);
+        let normalPrice = getMoney("priceNormal", NaN);
+        const earlyDiscount = getMoney("earlyDiscount", NaN);
+        const studentBuffer = getMoney("studentBuffer", 0);
+        const targetGM = clamp((getInt("targetGM", 20))/100, 0, 0.95);
 
-        // 成本（沒填就視為 NaN，避免亂算）
-        const japan = parseMoney($("costJapan").value);
-        let flight  = parseMoney($("costFlight").value);
-        const ins   = parseMoney($("costInsurance").value);
-        const sim   = parseMoney($("costSim").value);
-        const book  = parseMoney($("costBook").value);
-        const bigBusExtraPer = parseMoney($("bigBusExtraPer").value);
-        const extraPer = parseMoney($("costExtraPer").value);
+        const japan = getMoney("costJapan", NaN);
+        let flight  = getMoney("costFlight", NaN);
+        const ins   = getMoney("costInsurance", NaN);
+        const sim   = getMoney("costSim", NaN);
+        const book  = getMoney("costBook", NaN);
+        const bigBusExtraPer = getMoney("bigBusExtraPer", 0);
+        const extraPer = getMoney("costExtraPer", 0);
 
-        // 廣告與固定
-        const adCostPerSignup = parseMoney($("adCostPerSignup").value);
-        const fixedOther = parseMoney($("fixedOther").value);
-        const fixed = safeNum(adCostPerSignup, 0) * targetPeople + safeNum(fixedOther, 0);
+        const adCostPerSignup = getMoney("adCostPerSignup", 0);
+        const fixedOther = getMoney("fixedOther", 0);
+        const fixed = adCostPerSignup * targetPeople + fixedOther;
 
-        // 刷卡
-        const cardCount = Math.max(0, Math.floor(Number($("cardCount").value) || 0));
-        const feeRate = clamp(((Number($("cardFeeRate").value) || 0)/100), 0, 0.2);
+        const cardCount = Math.max(0, getInt("cardCount", 0));
+        const feeRate = clamp((Number($("cardFeeRate").value || 0))/100, 0, 0.2);
 
-        // 模式：不含機票（售價 -10000、機票成本=0）
+        const excludeDelta = getMoney("excludeDelta", 10000);
         if (ticketMode === "exclude"){
           flight = 0;
-          if (Number.isFinite(normalPrice)) normalPrice = Math.max(0, normalPrice - 10000);
+          if (Number.isFinite(normalPrice)) normalPrice = Math.max(0, normalPrice - excludeDelta);
         }
 
-        // 基礎成本（只加上有填的部分）
-        const baseCostParts = [japan, flight, ins, sim, book, bigBusExtraPer, extraPer].filter(Number.isFinite);
-        const baseCost = baseCostParts.reduce((a,b)=>a+b, 0);
+        // base cost: 需要至少日方有填，其他沒填就當 0 但會影響準確度
+        const baseCost =
+          (Number.isFinite(japan) ? japan : 0) +
+          (Number.isFinite(flight) ? flight : 0) +
+          (Number.isFinite(ins) ? ins : 0) +
+          (Number.isFinite(sim) ? sim : 0) +
+          (Number.isFinite(book) ? book : 0) +
+          (bigBusExtraPer || 0) + (extraPer || 0);
 
-        // 早鳥/學員價格（若一般價未填就不算）
         const earlyPrice = (Number.isFinite(normalPrice) && Number.isFinite(earlyDiscount))
           ? Math.max(0, normalPrice - earlyDiscount)
-          : NaN;
+          : (Number.isFinite(normalPrice) ? normalPrice : NaN);
 
-        const studentPrice = (Number.isFinite(baseCost) && Number.isFinite(studentBuffer))
-          ? baseCost + studentBuffer
-          : NaN;
+        const studentPrice = baseCost + studentBuffer;
 
-        // 平均售價（需要至少一般價有填）
-        const total = targetPeople;
         let avgPriceBeforeFee = NaN;
         if (Number.isFinite(normalPrice)){
-          const earlyP = Number.isFinite(earlyPrice) ? earlyPrice : normalPrice;
-          const studP  = Number.isFinite(studentPrice) ? studentPrice : normalPrice;
           avgPriceBeforeFee =
-            (normalPrice * normalCount + earlyP * earlyCount + studP * studentCount) / Math.max(1, total);
+            (normalPrice * normalCount + earlyPrice * earlyCount + studentPrice * studentCount) / Math.max(1, targetPeople);
         }
 
-        // 刷卡手續費（需要 avgPriceBeforeFee 有值）
         let avgCardFeePer = NaN;
         if (Number.isFinite(avgPriceBeforeFee)){
           const remainderPer = Math.max(0, avgPriceBeforeFee - DEPOSIT);
           const totalCardFee = remainderPer * cardCount * feeRate;
-          avgCardFeePer = totalCardFee / Math.max(1, total);
+          avgCardFeePer = totalCardFee / Math.max(1, targetPeople);
         }
 
-        // 每人成本（需要 baseCost 有值）
-        const costPer = Number.isFinite(baseCost)
-          ? baseCost + (Number.isFinite(avgCardFeePer) ? avgCardFeePer : 0)
-          : NaN;
+        const costPer = baseCost + (Number.isFinite(avgCardFeePer) ? avgCardFeePer : 0);
 
-        // 成團線（需要 avgPriceBeforeFee & costPer）
         let breakeven = Infinity;
-        if (Number.isFinite(avgPriceBeforeFee) && Number.isFinite(costPer) && avgPriceBeforeFee > costPer){
+        if (Number.isFinite(avgPriceBeforeFee) && avgPriceBeforeFee > costPer){
           breakeven = Math.ceil(fixed / (avgPriceBeforeFee - costPer));
           breakeven = Math.max(1, breakeven);
         }
 
         const gmAt = (n) => {
-          if (!Number.isFinite(avgPriceBeforeFee) || !Number.isFinite(costPer)) return NaN;
+          if (!Number.isFinite(avgPriceBeforeFee)) return NaN;
           const revenue = avgPriceBeforeFee * n;
           const cost = costPer * n + fixed;
           return revenue > 0 ? (revenue - cost) / revenue : NaN;
         };
 
-        // 15人成團建議一般價（固定尾數980）
+        // 反推：要 desiredPeople 成團（達到 targetGM）需要的「一般價」
         let suggestedNormal = Infinity;
-        if (Number.isFinite(costPer)){
-          const avgRequired = costPer + (fixed / desiredPeople);
+        if (Number.isFinite(japan) || Number.isFinite(normalPrice)){
+          const avgRequired = (costPer + (fixed / desiredPeople)) / (1 - targetGM);
           const denom = (normalCount + earlyCount);
           if (denom > 0){
-            const earlyD = Number.isFinite(earlyDiscount) ? earlyDiscount : 0;
-            const studP  = Number.isFinite(studentPrice) ? studentPrice : (Number.isFinite(normalPrice) ? normalPrice : avgRequired);
-            const rawNormal = (avgRequired * total + earlyD * earlyCount - studP * studentCount) / denom;
-            suggestedNormal = beautifyPriceUpTo980(rawNormal);
+            const eDisc = Number.isFinite(earlyDiscount) ? earlyDiscount : 0;
+            const rawNormal = (avgRequired * targetPeople + eDisc * earlyCount - studentPrice * studentCount) / denom;
+            suggestedNormal = beautifyUpTo980(rawNormal);
           }
         }
 
         return {
-          targetPeople, earlyCount, studentCount, normalCount, desiredPeople,
+          targetPeople, desiredPeople, earlyCount, studentCount, normalCount,
           normalPrice, earlyPrice, studentPrice,
           baseCost, avgCardFeePer, costPer,
           fixed, avgPriceBeforeFee,
@@ -846,37 +925,29 @@
           gmTarget: gmAt(targetPeople),
           targetGM,
           suggestedNormal,
-          japan: safeNum(japan,0), flight: safeNum(flight,0),
-          ins: safeNum(ins,0), sim: safeNum(sim,0), book: safeNum(book,0),
-          bigBusExtraPer: safeNum(bigBusExtraPer,0), extraPer: safeNum(extraPer,0),
+          // stack parts
+          japan: Number.isFinite(japan)?japan:0,
+          flight: Number.isFinite(flight)?flight:0,
+          ins: Number.isFinite(ins)?ins:0,
+          sim: Number.isFinite(sim)?sim:0,
+          book: Number.isFinite(book)?book:0,
+          bigBusExtraPer: bigBusExtraPer||0,
+          extraPer: extraPer||0,
+          excludeDelta
         };
       }
 
       function grossMarginRate(m, n){
-        if (!Number.isFinite(m.avgPriceBeforeFee) || !Number.isFinite(m.costPer)) return NaN;
+        if (!Number.isFinite(m.avgPriceBeforeFee)) return NaN;
         const revenue = m.avgPriceBeforeFee * n;
         const cost = m.costPer * n + m.fixed;
         return revenue > 0 ? (revenue - cost) / revenue : NaN;
       }
       function grossProfit(m, n){
-        if (!Number.isFinite(m.avgPriceBeforeFee) || !Number.isFinite(m.costPer)) return NaN;
+        if (!Number.isFinite(m.avgPriceBeforeFee)) return NaN;
         const revenue = m.avgPriceBeforeFee * n;
         const cost = m.costPer * n + m.fixed;
         return revenue - cost;
-      }
-
-      function setPillStyle(type){
-        const el = $("riskPill");
-        if (type === "danger"){
-          el.style.borderColor = "rgba(240,90,90,.35)";
-          el.style.color = "rgba(240,90,90,.95)";
-        }else if (type === "warn"){
-          el.style.borderColor = "rgba(255,176,32,.35)";
-          el.style.color = "rgba(160,110,0,.95)";
-        }else{
-          el.style.borderColor = "rgba(47,184,107,.30)";
-          el.style.color = "rgba(20,120,70,.95)";
-        }
       }
 
       function renderMarginList(m, from, to){
@@ -886,7 +957,7 @@
           const gp = grossProfit(m, n);
 
           let icon = "—";
-          if (Number.isFinite(m.breakeven) && m.breakeven !== Infinity){
+          if (m.breakeven !== Infinity){
             if (n < m.breakeven) icon = "⛔";
             else if (Number.isFinite(gm) && gm < m.targetGM) icon = "⚠️";
             else icon = "✅";
@@ -911,38 +982,48 @@
         $("marginList").innerHTML = rows.join("");
       }
 
+      function setPillStyle(type){
+        const el = $("riskPill");
+        if (type === "danger"){
+          el.style.borderColor = "rgba(240,90,90,.35)";
+          el.style.color = "rgba(240,90,90,.95)";
+        }else if (type === "warn"){
+          el.style.borderColor = "rgba(255,176,32,.35)";
+          el.style.color = "rgba(160,110,0,.95)";
+        }else{
+          el.style.borderColor = "rgba(47,184,107,.30)";
+          el.style.color = "rgba(20,120,70,.95)";
+        }
+      }
+
       function render(){
         const m = compute();
 
-        $("cntNormalTxt").textContent  = Number.isFinite(m.normalCount) ? `${m.normalCount}人` : "—";
-        $("cntEarlyTxt").textContent   = Number.isFinite(m.earlyCount) ? `${m.earlyCount}人` : "—";
-        $("cntStudentTxt").textContent = Number.isFinite(m.studentCount) ? `${m.studentCount}人` : "—";
+        $("cntNormalTxt").textContent  = `${m.normalCount}人`;
+        $("cntEarlyTxt").textContent   = `${m.earlyCount}人`;
+        $("cntStudentTxt").textContent = `${m.studentCount}人`;
 
-        $("priceEarlyTxt").textContent   = fmtMoney(m.earlyPrice);
-        $("priceStudentTxt").textContent = fmtMoney(m.studentPrice);
+        $("priceEarlyTxt").textContent   = Number.isFinite(m.normalPrice) ? fmtMoney(m.earlyPrice) : "NT$ —";
+        $("priceStudentTxt").textContent = (m.baseCost>0 ? fmtMoney(m.studentPrice) : "NT$ —");
 
         $("avgPriceTxt").textContent = fmtMoney(m.avgPriceBeforeFee);
-        $("costPerTxt").textContent  = fmtMoney(m.costPer);
+        $("costPerTxt").textContent  = (m.baseCost>0 ? fmtMoney(m.costPer) : "NT$ —");
         $("feeSubTxt").textContent   = `尾款刷卡平均手續費：${fmtMoney(m.avgCardFeePer)} / 人`;
-        $("fixedTxt").textContent    = fmtMoney(m.fixed);
-        $("targetGmTxt").textContent = Number.isFinite(m.targetGM) ? Math.round(m.targetGM*100) + "%" : "—";
+        $("fixedTxt").textContent    = (m.fixed>0 ? fmtMoney(m.fixed) : "NT$ —");
+        $("targetGmTxt").textContent = Math.round(m.targetGM*100) + "%";
 
-        if (m.targetPeople > RECOMMENDED_CAP){
-          $("capNote").textContent = `你填的目標人數 ${m.targetPeople} 人超過 17 人，可能需要大型巴士加價`;
-          $("capNote").style.borderColor = "rgba(255,176,32,.35)";
-        }else{
-          $("capNote").textContent = "建議出團人數：17人（目前巴士可載學生上限）";
-          $("capNote").style.borderColor = "rgba(0,0,0,.06)";
-        }
         $("peopleHint").textContent = `建議出團：17人｜目標人數：${m.targetPeople}人`;
+        $("capNote").textContent = (m.targetPeople > RECOMMENDED_CAP)
+          ? `你填的目標人數 ${m.targetPeople} 人超過 17 人，可能需要大型巴士加價`
+          : `建議出團人數：17人（目前巴士可載學生上限）`;
 
-        $("busHint").textContent = (m.bigBusExtraPer > 0)
-          ? `已加入大型巴士追加費：${fmtMoney(m.bigBusExtraPer)} / 人`
-          : `大型巴士追加費目前未填`;
+        $("busHint").textContent = (m.bigBusExtraPer>0)
+          ? `已加入大型巴士追加費：NT$ ${m.bigBusExtraPer.toLocaleString("zh-TW")} / 人`
+          : "大型巴士追加費未填";
 
-        const p15 = m.targetGM > 0 && Number.isFinite(m.gm15) ? clamp(m.gm15 / m.targetGM, 0, 1) : 0;
-        const p17 = m.targetGM > 0 && Number.isFinite(m.gm17) ? clamp(m.gm17 / m.targetGM, 0, 1) : 0;
-        const pT  = m.targetGM > 0 && Number.isFinite(m.gmTarget) ? clamp(m.gmTarget / m.targetGM, 0, 1) : 0;
+        const p15 = (m.targetGM>0 && Number.isFinite(m.gm15)) ? clamp(m.gm15/m.targetGM, 0, 1) : 0;
+        const p17 = (m.targetGM>0 && Number.isFinite(m.gm17)) ? clamp(m.gm17/m.targetGM, 0, 1) : 0;
+        const pT  = (m.targetGM>0 && Number.isFinite(m.gmTarget)) ? clamp(m.gmTarget/m.targetGM,0,1) : 0;
 
         setRing($("ring15"), p15, "var(--orange)");
         setRing($("ring17"), p17, "var(--gold)");
@@ -952,9 +1033,9 @@
         $("gm17Txt").textContent = fmtPct(m.gm17);
         $("gmTargetTxt").textContent = fmtPct(m.gmTarget);
 
-        if (m.breakeven === Infinity){
+        if (m.breakeven === Infinity || !Number.isFinite(m.avgPriceBeforeFee) || m.baseCost===0){
           $("breakevenTxt").textContent = "—";
-          $("riskPill").textContent = "資料不足（請先填售價與成本）";
+          $("riskPill").textContent = "資料不足（先填售價與日方/機票成本）";
           setPillStyle("warn");
         }else{
           $("breakevenTxt").textContent = `${m.breakeven} 人`;
@@ -975,18 +1056,17 @@
             ? fmtMoney(m.suggestedNormal)
             : "NT$ —";
 
-        // 成本堆疊（沒有資料就空白）
         const parts = [
-          {name:"日方", value:m.japan, color:"rgba(42,125,255,.35)"},
-          {name:"機票", value:m.flight, color:"rgba(255,106,43,.30)"},
-          {name:"保險", value:m.ins, color:"rgba(47,184,107,.28)"},
-          {name:"網卡", value:m.sim, color:"rgba(255,176,32,.28)"},
-          {name:"手冊", value:m.book, color:"rgba(0,0,0,.10)"},
-          {name:"巴士", value:m.bigBusExtraPer, color:"rgba(194,138,74,.25)"},
-          {name:"其他", value:m.extraPer, color:"rgba(0,0,0,.06)"},
+          {value:m.japan, color:"rgba(42,125,255,.35)"},
+          {value:m.flight, color:"rgba(255,106,43,.30)"},
+          {value:m.ins, color:"rgba(47,184,107,.28)"},
+          {value:m.sim, color:"rgba(255,176,32,.28)"},
+          {value:m.book, color:"rgba(0,0,0,.10)"},
+          {value:m.bigBusExtraPer, color:"rgba(194,138,74,.25)"},
+          {value:m.extraPer, color:"rgba(0,0,0,.06)"},
         ];
         const hasAny = parts.some(p=>p.value>0);
-        $("costStack").innerHTML = hasAny ? $("costStack").innerHTML : "";
+        $("costStack").innerHTML = "";
         if (hasAny) setMiniStack($("costStack"), parts);
 
         const from = Math.max(1, Math.floor(Number($("rangeFrom").value) || 10));
@@ -997,7 +1077,7 @@
         for (let i=0;i<steps;i++){
           const n = from + (to-from) * (i/(steps-1));
           const gm = grossMarginRate(m, n);
-          pts.push(Number.isFinite(gm) ? clamp(gm, 0, 1) : 0);
+          pts.push(Number.isFinite(gm) ? clamp(gm,0,1) : 0);
         }
         makeLineSVG($("sparkMargin"), pts);
         renderMarginList(m, from, to);
@@ -1009,11 +1089,6 @@
           formatCommaKeepCursor(input);
           render();
         });
-        input.addEventListener("blur", ()=>{
-          const v = parseMoney(input.value);
-          if (Number.isFinite(v)) input.value = v.toLocaleString("zh-TW");
-          render();
-        });
       }
 
       function setMode(mode){
@@ -1023,11 +1098,50 @@
         render();
       }
 
+      function fillSuggested(){
+        // 你要的「建議數字」：短、可用、好理解
+        $("targetPeople").value = "20";
+        $("desiredPeople").value = "15";
+        $("earlyCount").value = "0";
+        $("studentCount").value = "0";
+
+        $("priceNormal").value = "45,800";
+        $("earlyDiscount").value = "2,000";
+        $("studentBuffer").value = "0";
+        $("targetGM").value = "20";
+        $("excludeDelta").value = "10,000";
+
+        $("costJapan").value = "25,000";
+        $("costFlight").value = "12,000";
+        $("costInsurance").value = "600";
+        $("costSim").value = "280";
+        $("costBook").value = "100";
+        $("bigBusExtraPer").value = "0";
+        $("costExtraPer").value = "0";
+
+        $("adCostPerSignup").value = "2,500";
+        $("fixedOther").value = "0";
+        $("cardCount").value = "1";
+        $("cardFeeRate").value = "2.4";
+
+        $("rangeFrom").value = "10";
+        $("rangeTo").value = "28";
+
+        toast("已填入建議數字");
+        render();
+      }
+
+      function resetAll(){
+        document.querySelectorAll("input").forEach(el => el.value = "");
+        setMode("include");
+        toast("已清空");
+      }
+
       function bind(){
-        ["priceNormal","earlyDiscount","studentBuffer","costJapan","costFlight","costInsurance","costSim","costBook","bigBusExtraPer","costExtraPer","adCostPerSignup","fixedOther"]
+        ["priceNormal","earlyDiscount","studentBuffer","excludeDelta","costJapan","costFlight","costInsurance","costSim","costBook","bigBusExtraPer","costExtraPer","adCostPerSignup","fixedOther"]
           .forEach(attachMoney);
 
-        ["targetPeople","earlyCount","studentCount","desiredPeople","targetGM","cardCount","cardFeeRate","rangeFrom","rangeTo"]
+        ["targetPeople","desiredPeople","earlyCount","studentCount","targetGM","cardCount","cardFeeRate","rangeFrom","rangeTo"]
           .forEach(id=>{
             $(id).addEventListener("input", render);
             $(id).addEventListener("change", render);
@@ -1035,11 +1149,8 @@
 
         $("modeInclude").addEventListener("click", ()=>setMode("include"));
         $("modeExclude").addEventListener("click", ()=>setMode("exclude"));
-
-        $("resetBtn").addEventListener("click", ()=>{
-          document.querySelectorAll("input").forEach(el => el.value = "");
-          setMode("include");
-        });
+        $("fillSuggestBtn").addEventListener("click", fillSuggested);
+        $("resetBtn").addEventListener("click", resetAll);
       }
 
       bind();
